@@ -3,7 +3,7 @@ const cors = require('cors');
 const pool = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // Middleware
 app.use(cors());
@@ -80,13 +80,29 @@ app.get('/dramas', async (req, res) => {
   }
 });
 
-// Тестовый роут
+// 📍 СПЕЦИАЛЬНЫЙ ТЕСТОВЫЙ РОУТ
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: '✅ K-Drama Quotes API работает!',
+    database: '✅ Подключено к PostgreSQL',
+    status: '🚀 Сервер запущен и готов к работе',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      all_quotes: '/quotes',
+      all_dramas: '/dramas',
+      test: '/test'
+    }
+  });
+});
+
+// Тестовый роут (главная страница)
 app.get('/', (req, res) => {
   res.json({ 
     message: 'K-Drama Quotes API работает!',
     endpoints: {
       quotes: '/quotes',
-      dramas: '/dramas'
+      dramas: '/dramas',
+      test: '/test'
     }
   });
 });
