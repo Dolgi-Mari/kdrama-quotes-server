@@ -83,13 +83,11 @@ app.get('/dramas', async (req, res) => {
 // Тестовый роут
 app.get('/', (req, res) => {
   res.json({ 
-    message: '🎬 K-Drama Quotes API работает!',
+    message: 'K-Drama Quotes API работает!',
     endpoints: {
       quotes: '/quotes',
-      dramas: '/dramas',
-      'quote_by_id': '/quotes/:id'
-    },
-    instructions: 'Используйте эти endpoints в вашем Android приложении'
+      dramas: '/dramas'
+    }
   });
 });
 
@@ -97,5 +95,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
   console.log(`📱 API доступно по: http://localhost:${PORT}`);
-  console.log(`🎬 K-Drama Quotes Server ready!`);
 });
