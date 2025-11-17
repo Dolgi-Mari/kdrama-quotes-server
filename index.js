@@ -50,20 +50,45 @@ app.get('/quotes/:id', async (req, res) => {
 });
 
 // Добавить новую цитату
+// Добавить новую цитату
 app.post('/quotes', async (req, res) => {
   try {
-    const { text, drama_id, character_name, season, episode } = req.body;
+    const { text, drama_title, character_name, season, episode } = req.body;
     
+    // Сначала находим или создаем дораму
+    let dramaResult = await pool.query('SELECT id FROM dramas WHERE title = $1', [drama_title]);
+    let dramaId;
+    
+    if (dramaResult.rows.length === 0) {
+      // Создаем новую дораму
+      dramaResult = await pool.query(
+        'INSERT INTO dramas (title) VALUES ($1) RETURNING id',
+        [drama_title]
+      );
+      dramaId = dramaResult.rows[0].id;
+    } else {
+      dramaId = dramaResult.rows[0].id;
+    }
+    
+    // Теперь добавляем цитату
     const result = await pool.query(
       `INSERT INTO quotes (text, drama_id, character_name, season, episode) 
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [text, drama_id, character_name, season, episode]
+      [text, dramaId, character_name, season, episode]
     );
     
-    res.status(201).json(result.rows[0]);
+    // Получаем полные данные цитаты с названием дорамы
+    const quoteResult = await pool.query(`
+      SELECT q.*, d.title as drama_title 
+      FROM quotes q 
+      LEFT JOIN dramas d ON q.drama_id = d.id 
+      WHERE q.id = $1
+    `, [result.rows[0].id]);
+    
+    res.status(201).json(quoteResult.rows[0]);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка при добавлении цитаты' });
+    console.error('Ошибка при добавлении цитаты:', err);
+    res.status(500).json({ error: 'Ошибка при добавлении цитаты: ' + err.message });
   }
 });
 
