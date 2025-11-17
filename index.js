@@ -133,6 +133,129 @@ app.get('/', (req, res) => {
 });
 
 
+/////////////////
+// 📝 РОУТЫ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ
+
+// Регистрация пользователя
+app.post('/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    
+    // Проверяем, нет ли уже пользователя с таким email
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE email = $1', 
+      [email]
+    );
+    
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Пользователь с таким email уже существует' });
+    }
+    
+    // Создаем нового пользователя
+    const result = await pool.query(
+      `INSERT INTO users (username, email, password) 
+       VALUES ($1, $2, $3) RETURNING id, username, email`,
+      [username, email, password]
+    );
+    
+    res.status(201).json({
+      message: 'Пользователь успешно зарегистрирован',
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Ошибка регистрации:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Вход пользователя
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Ищем пользователя
+    const result = await pool.query(
+      'SELECT id, username, email FROM users WHERE email = $1 AND password = $2',
+      [email, password]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Неверный email или пароль' });
+    }
+    
+    res.json({
+      message: 'Успешный вход',
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Ошибка входа:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Обновляем добавление цитат - теперь с user_id
+app.post('/quotes', async (req, res) => {
+  try {
+    const { text, drama_title, character_name, season, episode, user_id } = req.body;
+    
+    if (!user_id) {
+      return res.status(400).json({ error: 'Не указан пользователь' });
+    }
+    
+    // Сначала находим или создаем дораму
+    let dramaResult = await pool.query('SELECT id FROM dramas WHERE title = $1', [drama_title]);
+    let dramaId;
+    
+    if (dramaResult.rows.length === 0) {
+      dramaResult = await pool.query(
+        'INSERT INTO dramas (title) VALUES ($1) RETURNING id',
+        [drama_title]
+      );
+      dramaId = dramaResult.rows[0].id;
+    } else {
+      dramaId = dramaResult.rows[0].id;
+    }
+    
+    // Добавляем цитату с user_id
+    const result = await pool.query(
+      `INSERT INTO quotes (text, drama_id, character_name, season, episode, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [text, dramaId, character_name, season, episode, user_id]
+    );
+    
+    const quoteResult = await pool.query(`
+      SELECT q.*, d.title as drama_title 
+      FROM quotes q 
+      LEFT JOIN dramas d ON q.drama_id = d.id 
+      WHERE q.id = $1
+    `, [result.rows[0].id]);
+    
+    res.status(201).json(quoteResult.rows[0]);
+  } catch (err) {
+    console.error('Ошибка при добавлении цитаты:', err);
+    res.status(500).json({ error: 'Ошибка при добавлении цитаты: ' + err.message });
+  }
+});
+
+// Получаем цитаты конкретного пользователя
+app.get('/quotes/user/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const result = await pool.query(`
+      SELECT q.*, d.title as drama_title 
+      FROM quotes q 
+      LEFT JOIN dramas d ON q.drama_id = d.id 
+      WHERE q.user_id = $1
+      ORDER BY q.id DESC
+    `, [user_id]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+////////////////////
+
 // Запуск сервера
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
