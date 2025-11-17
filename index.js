@@ -50,6 +50,7 @@ app.get('/quotes/:id', async (req, res) => {
 });
 
 // Добавить новую цитату
+// Добавить новую цитату
 app.post('/quotes', async (req, res) => {
   try {
     const { text, drama_title, character_name, season, episode } = req.body;
