@@ -131,54 +131,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// 📝 РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
-app.post('/register', async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-    
-    // Проверяем, нет ли уже пользователя с таким email
-    const userCheck = await pool.query(
-      'SELECT * FROM users WHERE email = $1 OR username = $2',
-      [email, username]
-    );
-    
-    if (userCheck.rows.length > 0) {
-      return res.status(400).json({ error: 'Пользователь с таким email или именем уже существует' });
-    }
-    
-    // Создаем нового пользователя
-    const result = await pool.query(
-      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
-      [username, email, password]
-    );
-    
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error('Ошибка при регистрации:', err);
-    res.status(500).json({ error: 'Ошибка при регистрации' });
-  }
-});
-
-// 🔐 ЛОГИН ПОЛЬЗОВАТЕЛЯ
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    const result = await pool.query(
-      'SELECT id, username, email FROM users WHERE email = $1 AND password = $2',
-      [email, password]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Неверный email или пароль' });
-    }
-    
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Ошибка при входе:', err);
-    res.status(500).json({ error: 'Ошибка при входе' });
-  }
-});
 
 // Запуск сервера
 app.listen(PORT, () => {
