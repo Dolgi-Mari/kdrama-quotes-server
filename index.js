@@ -100,9 +100,10 @@ app.post('/login', async (req, res) => {
 app.get('/quotes', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT q.*, d.title as drama_title 
+      SELECT q.*, d.title as drama_title, u.username as user_username
       FROM quotes q 
       LEFT JOIN dramas d ON q.drama_id = d.id 
+      LEFT JOIN users u ON q.user_id = u.id
       ORDER BY q.id DESC
     `);
     res.json(result.rows);
@@ -111,7 +112,6 @@ app.get('/quotes', async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 // Получить цитату по ID
 app.get('/quotes/:id', async (req, res) => {
   try {
