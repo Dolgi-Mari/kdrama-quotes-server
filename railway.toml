@@ -1,8 +1,10 @@
+# Конфигурационный файл для развертывания на Railway
+
 [build]
-builder = "nixpacks"
+builder = "nixpacks"  # Система сборки для приложения
 
 [deploy]
-startCommand = "npm start"
+startCommand = "npm start"  # Команда для запуска приложения после сборки
 
 [env]
-PORT = "3000"
+PORT = "3000"  # Порт, на котором будет работать приложение
