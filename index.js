@@ -1,16 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const pool = require('./database');
-const bcrypt = require('bcryptjs');
+// Главный файл сервера Express для K-Drama Quotes API
+const express = require('express');          // Фреймворк для веб-приложений
+const cors = require('cors');                // Middleware для CORS
+const pool = require('./database');          // Пул подключений к PostgreSQL
+const bcrypt = require('bcryptjs');          // Библиотека для хеширования паролей
+
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8080;  // Порт из переменных окружения или 8080
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors());                             // Разрешение кросс-доменных запросов
+app.use(express.json());                     // Парсинг JSON в теле запросов
 
-// 🚀 АУТЕНТИФИКАЦИЯ
+
+// АУТЕНТИФИКАЦИЯ
 
 // Регистрация пользователя
 app.post('/register', async (req, res) => {
@@ -35,7 +38,7 @@ app.post('/register', async (req, res) => {
     // Хеширование пароля
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Создание пользователя
+    // Создание нового пользователя в базе данных
     const result = await pool.query(
       'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
       [username, email, hashedPassword]
@@ -51,12 +54,14 @@ app.post('/register', async (req, res) => {
   }
 });
 
+
+
 // Вход пользователя
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Проверка обязательных полей
+    // Валидация входных данных
     if (!username || !password) {
       return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
     }
@@ -94,7 +99,8 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// 📱 РОУТЫ ДЛЯ ЦИТАТ
+
+// РОУТЫ ДЛЯ ЦИТАТ
 
 // Получить все цитаты
 app.get('/quotes', async (req, res) => {
